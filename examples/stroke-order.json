@@ -1,0 +1,17 @@
+{
+  "id": "demo-stroke-order",
+  "title": "四季汉字笔顺练习",
+  "template": "chinese-stroke-order",
+  "paper": { "size": "A4", "orientation": "portrait", "marginMm": 12 },
+  "layout": {
+    "grid": "tianzige", "gridSizeMm": 15,
+    "sampleCells": 1, "traceCells": 4, "blankCells": 4,
+    "showPinyin": true, "fontFamily": "Hiragino Sans GB", "rowsPerPage": 2
+  },
+  "items": [
+    { "character": "春", "pinyin": "chūn" },
+    { "character": "夏", "pinyin": "xià" },
+    { "character": "秋", "pinyin": "qiū" },
+    { "character": "冬", "pinyin": "dōng" }
+  ]
+}

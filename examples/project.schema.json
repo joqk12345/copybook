@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+    },
+    "template": {
+      "default": "chinese-tracing",
+      "type": "string",
+      "enum": [
+        "chinese-tracing",
+        "chinese-stroke-order"
+      ]
+    },
+    "paper": {
+      "default": {
+        "size": "A4",
+        "orientation": "portrait",
+        "marginMm": 12
+      },
+      "type": "object",
+      "properties": {
+        "size": {
+          "default": "A4",
+          "type": "string",
+          "const": "A4"
+        },
+        "orientation": {
+          "default": "portrait",
+          "type": "string",
+          "const": "portrait"
+        },
+        "marginMm": {
+          "default": 12,
+          "type": "number",
+          "minimum": 8,
+          "maximum": 35
+        }
+      },
+      "required": [
+        "size",
+        "orientation",
+        "marginMm"
+      ],
+      "additionalProperties": false
+    },
+    "layout": {
+      "default": {
+        "grid": "tianzige",
+        "gridSizeMm": 15,
+        "sampleCells": 1,
+        "traceCells": 4,
+        "blankCells": 4,
+        "showPinyin": true,
+        "fontFamily": "Hiragino Sans GB"
+      },
+      "type": "object",
+      "properties": {
+        "grid": {
+          "default": "tianzige",
+          "type": "string",
+          "const": "tianzige"
+        },
+        "gridSizeMm": {
+          "default": 15,
+          "type": "number",
+          "minimum": 8,
+          "maximum": 30
+        },
+        "sampleCells": {
+          "default": 1,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "traceCells": {
+          "default": 4,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "blankCells": {
+          "default": 4,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "showPinyin": {
+          "default": true,
+          "type": "boolean"
+        },
+        "fontFamily": {
+          "default": "Hiragino Sans GB",
+          "type": "string",
+          "maxLength": 100
+        },
+        "fontPath": {
+          "type": "string"
+        },
+        "rowsPerPage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        }
+      },
+      "required": [
+        "grid",
+        "gridSizeMm",
+        "sampleCells",
+        "traceCells",
+        "blankCells",
+        "showPinyin",
+        "fontFamily"
+      ],
+      "additionalProperties": false
+    },
+    "items": {
+      "minItems": 1,
+      "maxItems": 10000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "character": {
+            "type": "string",
+            "pattern": "^\\p{Script=Han}$"
+          },
+          "pinyin": {
+            "default": "",
+            "type": "string",
+            "maxLength": 24,
+            "pattern": "^[\\p{L}\\p{M}\\süÜ:0-9'-]*$"
+          }
+        },
+        "required": [
+          "character",
+          "pinyin"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "pageCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+    },
+    "repeatToPageCount": {
+      "default": false,
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "template",
+    "paper",
+    "layout",
+    "items",
+    "repeatToPageCount"
+  ],
+  "additionalProperties": false
+}
