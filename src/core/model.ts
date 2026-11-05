@@ -21,7 +21,8 @@ export type Issue = { severity: 'error' | 'warning'; code: string; message: stri
 export const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export function geometry(p: Project) {
   const rowHeight = p.layout.gridSizeMm + (p.layout.showPinyin ? 7 : 0) + 4;
-  const usableHeight = 297 - 2*p.paper.marginMm - 36;
+  // Compact 15 mm header + 3 mm gap, with a 6 mm footer and safety space.
+  const usableHeight = 297 - 2*p.paper.marginMm - 27;
   const capacity = Math.floor(usableHeight / rowHeight);
   const strokeColumns = Math.floor((210 - 2*p.paper.marginMm) / p.layout.gridSizeMm);
   return { rowHeight, capacity, rows: p.layout.rowsPerPage ?? capacity, usableHeight, strokeColumns,

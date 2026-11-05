@@ -86,7 +86,7 @@ npm run --silent worksheet -- export pdf imported-vocabulary --all
 
 ### 二年级上册笔顺练习
 
-基于同一份已分组教材提取结果，另建本地笔顺项目 `projects/grade2-upper-stroke-order/`：保留原有 741 条字音练习及 8 个单元、33 个课文/园地分组，覆盖全部 417 个不同汉字。A4 纵向、15 mm 田字格、每字最多 4 个练习块/页，按章节分页后为 198 页。可在左侧项目列表选择“二年级上册汉字笔顺练习”，或直接访问 [本地预览](http://localhost:5173/?project=grade2-upper-stroke-order)；全册打印预览 HTML 保存在项目 `exports/stroke-order.html`。
+基于同一份已分组教材提取结果，另建本地笔顺项目 `projects/grade2-upper-stroke-order/`：保留原有 741 条字音练习及 8 个单元、33 个课文/园地分组，覆盖全部 417 个不同汉字。A4 纵向、15 mm 田字格、每字最多 4 个练习块/页，按章节分页后为 195 页。可在左侧项目列表选择“二年级上册汉字笔顺练习”，或直接访问 [本地预览](http://localhost:5173/?project=grade2-upper-stroke-order)；全册打印预览 HTML 保存在项目 `exports/stroke-order.html`。
 
 生成方式（需先完成上面的 PDF 导入，并保持导入项目位于本地 `projects/`）：
 
@@ -142,8 +142,8 @@ npm run --silent worksheet -- export pdf demo-stroke-order --all
 示例：[`examples/demo.json`](examples/demo.json)，可供编辑器使用的 JSON Schema：[`examples/project.schema.json`](examples/project.schema.json)。运行时以 `src/core/model.ts` 中 Zod schema 为准。每个 item 必须是单个汉字，拼音由用户显式提供；缺少拼音发出警告，不自动推测多音字。所有尺寸均以毫米定义，纸张固定为 **210 × 297 mm**。
 
 - 下列固定行数规则适用于 `chinese-tracing`；笔顺模板使用上文的完整练习块分页。
-- 每页预留上下 margin、30 mm 标题区及 6 mm 页脚保护区；每行高度为 `gridSizeMm + (showPinyin ? 7 : 0) + 4`。
-- 自动容量为 `floor((297 - 2 × marginMm - 36) / 行高)`，可用 `rowsPerPage` 指定更少行数。
+- 每页预留上下 margin、15 mm 紧凑标题区及 6 mm 页脚保护区；每行高度为 `gridSizeMm + (showPinyin ? 7 : 0) + 4`。
+- 自动容量为 `floor((297 - 2 × marginMm - 27) / 行高)`，可用 `rowsPerPage` 指定更少行数。
 - 默认按 items 顺序自然分页，最后一页不补齐，不丢弃内容。
 - 可选 pageCount 不能小于自然页数。大于自然页数时，必须显式设置 `repeatToPageCount: true`。
 - 循环模式按 items 序列连续循环，每页填满指定行数，直到 pageCount（未设置则自然页数）。练习页码区别各页。示例四个季节、每页八行、循环到 20 页，练习内容会重复；不是 20 页不同汉字。

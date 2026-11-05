@@ -7,11 +7,11 @@ export const sheetCSS = `
 html,body { margin: 0; padding: 0; background: #fff; }
 .sheet { width: 210mm; height: 297mm; background: white; color:#24343a; position:relative; break-after:page; font-family:WorksheetFont,Arial,sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .sheet:last-child { break-after:auto; }
-.sheet-header {height:24mm; border-bottom:.3mm solid #aab5b5; margin-bottom:6mm;}
-.sheet-header .kicker { font-size:2.5mm; letter-spacing:.65mm; color:#637b7b; margin-bottom:2mm; }
-.sheet-header h1 {font-family:WorksheetFont,sans-serif; font-size:5.5mm; font-weight:400; line-height:7mm; margin:0; white-space:nowrap;}
-.group-heading {font-size:3mm;line-height:4mm;margin-top:1mm;white-space:nowrap;}
-.sheet-header .meta {font-size:2.6mm; margin-top:2mm; color:#708080;}
+.sheet-header {height:15mm; border-bottom:.3mm solid #aab5b5; margin-bottom:3mm;}
+.sheet-header .kicker { font-size:1.9mm; letter-spacing:.45mm; color:#637b7b; margin-bottom:.7mm; }
+.sheet-header h1 {font-family:WorksheetFont,sans-serif; font-size:4mm; font-weight:400; line-height:5mm; margin:0; white-space:nowrap;}
+.group-heading {font-size:2.3mm;line-height:3mm;margin-top:.4mm;white-space:nowrap;}
+.sheet-header .meta {font-size:2.1mm; margin-top:.6mm; color:#708080;}
 .practice-row { display:flex; flex-direction:column; align-items:flex-start; }
 .pinyin {height:7mm; line-height:7mm; text-align:center; font: 4mm/7mm Arial,sans-serif; color:#3e5559;}
 .cells {display:flex;}
