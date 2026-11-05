@@ -137,6 +137,16 @@
             "type": "string",
             "maxLength": 24,
             "pattern": "^[\\p{L}\\p{M}\\süÜ:0-9'-]*$"
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "chapter": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
           }
         },
         "required": [

@@ -28,9 +28,9 @@ export async function exportPDF(store:Store,id:string,all=false,out?:string) {
     const problems=await page.evaluate(()=>Array.from(document.querySelectorAll<HTMLElement>('.sheet')).flatMap(sheet=>{
       const b=sheet.getBoundingClientRect();
       const main=sheet.querySelector('main')!.getBoundingClientRect();
-      const title=sheet.querySelector('h1')!;
+      const titleOverflow=Array.from(sheet.querySelectorAll('h1,.group-heading')).some(el=>el.scrollWidth>el.clientWidth+1);
       const pinyinOverflow=Array.from(sheet.querySelectorAll('.pinyin')).some(el=>el.scrollWidth>el.clientWidth+1);
-      return main.bottom>b.bottom-20||main.right>b.right||title.scrollWidth>title.clientWidth||pinyinOverflow ? [Number(sheet.dataset.page)]:[];
+      return main.bottom>b.bottom-20||main.right>b.right||titleOverflow||pinyinOverflow ? [Number(sheet.dataset.page)]:[];
     }));
     if(problems.length) throw new Error(`页面溢出：${problems.join(',')}`);
     await page.pdf({path:tmp,format:'A4',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:false,margin:{top:0,right:0,bottom:0,left:0}});

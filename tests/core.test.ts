@@ -25,6 +25,12 @@ describe('配置与分页',()=>{
     expect(after[0].hash).toBe(before[0].hash);expect(after[1].hash).not.toBe(before[1].hash);
     p.layout.traceCells=3;expect(paginate(p)[0].hash).not.toBe(before[0].hash);
   });
+  it('按单元/章节另起页面，重复模式不混组，标题参与审核哈希',()=>{
+    const p=make();delete p.pageCount;p.items=[{character:'春',pinyin:'chūn',unit:'第一单元',chapter:'1 春天'},{character:'夏',pinyin:'xià',unit:'第一单元',chapter:'2 夏天'},{character:'秋',pinyin:'qiū',unit:'第二单元',chapter:'1 秋天'}];
+    const before=paginate(p);expect(before.map(s=>s.items.length)).toEqual([1,1,1]);
+    p.items[1].chapter='2 夏日';const after=paginate(p);expect(after[0].hash).toBe(before[0].hash);expect(after[1].hash).not.toBe(before[1].hash);
+    p.repeatToPageCount=true;p.pageCount=5;const repeated=paginate(p);expect(repeated).toHaveLength(5);expect(repeated.map(s=>s.items[0].character)).toEqual(['春','夏','秋','春','夏']);
+  });
   it('缺字体明确报错',()=>{const p=make();p.layout.fontPath='/nonexistent/font.ttf';expect(validate(p).some(i=>i.code==='FONT_UNAVAILABLE')).toBe(true);});
 });
 describe('持久化与审核关口',()=>{

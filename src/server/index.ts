@@ -5,6 +5,9 @@ import { Store } from '../core/store.js';
 import { validate } from '../core/validate.js';
 import { resolveFont } from '../core/fonts.js';
 import { renderDocument } from '../core/render.js';
+import { importPDF } from '../import/pdf.js';
+import { promises as fs } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { exportPDF } from '../pdf/export.js';
 const app=express(),store=new Store(),port=Number(process.env.PORT??5173);
 const hosts=new Set([`localhost:${port}`,`127.0.0.1:${port}`]);
@@ -13,6 +16,15 @@ app.use((req,res,next)=>{
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
   if(req.method!=='GET'&&(!hosts.has((()=>{try{return new URL(req.headers.origin??'').host;}catch{return '';}})())||req.headers['x-worksheet-ui']!=='review')) {res.status(403).json({ok:false,error:'写入需要同源本地 UI'});return;}
   next();
+});
+app.post('/api/import/pdf',express.raw({type:'application/pdf',limit:'50mb'}),async(req,res)=>{
+  if(!Buffer.isBuffer(req.body)||!req.body.length)throw new Error('请选择 PDF 文件');
+  const dir=await fs.mkdtemp(path.join(tmpdir(),'worksheet-pdf-'));
+  try {
+    const file=path.join(dir,'upload.pdf');await fs.writeFile(file,req.body);
+    const result=await importPDF(store,file,{id:String(req.query.id??''),title:req.query.title?String(req.query.title):undefined,mode:(req.query.mode??'annotated') as 'annotated'|'text',pages:req.query.pages?String(req.query.pages):undefined,dedupe:req.query.dedupe==='true',filename:decodeURIComponent(String(req.headers['x-worksheet-filename']??'upload.pdf'))});
+    res.json({ok:true,data:result});
+  }finally{await fs.rm(dir,{recursive:true,force:true});}
 });
 app.use(express.json({limit:'1mb'}));
 app.get('/api/projects',async(_req,res)=>{res.json({ok:true,data:await store.list()});});

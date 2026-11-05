@@ -50,6 +50,40 @@ npm run --silent worksheet -- export pdf demo-chinese --approved-only --out proj
 
 **人工批准边界：** 常规 CLI 只接受 `draft` / `needs_revision`，明确拒绝 `approved`，不存在管理员批准开关。用户在本地 UI 点击“批准本页”并确认后才写入批准。Agent 不应调用审核 HTTP 接口或模拟生产 UI 来代替人工批准。接口要求同源 Origin 与专用请求头，防止其他网站直接提交；这不是身份认证机制，也不能防止有本地文件/HTTP 权限的程序伪造请求。项目保存在本机用户可写目录，不具有防篡改审计保证。E2E 模拟批准只针对 `.tmp/e2e-projects` 隔离项目，生产示例保持 draft。
 
+## 从 PDF 导入描红
+
+工作台顶部“导入 PDF”支持选择本地文件，配置新项目 ID、标题、提取模式、来源页码和去重选项。文件仅发送到本机服务，解析后即删除临时上传文件，不使用外部 API。
+
+PDF 导入需要 **Poppler 的 pdftotext**：macOS 用 `brew install poppler`，Debian/Ubuntu 用 `sudo apt install poppler-utils`。支持不超过 50 MB、300 页、含可复制文字层的 PDF；当前不做扫描件 OCR，不支持密码解密或从纯拼音猜测汉字。
+
+CLI 示例（源路径可以包含中文和空格）：
+
+```bash
+npm run --silent worksheet -- import pdf --from "/path/to/vocabulary.pdf" --id imported-vocabulary --title "词语描红"
+# 只读取部分来源页，并按章节内的“汉字 + 拼音”去重；不同章节和不同读音仍保留
+npm run --silent worksheet -- import pdf --from "/path/to/vocabulary.pdf" --id imported-selected --pages 3,5-8 --dedupe
+# 没有上方拼音的文字 PDF：导入全部汉字，未配对拼音留空
+npm run --silent worksheet -- import pdf --from "/path/to/text.pdf" --id imported-text --mode text
+npm run --silent worksheet -- validate imported-vocabulary
+npm run --silent worksheet -- render imported-vocabulary
+# 明确允许导出尚未人工批准的草稿
+npm run --silent worksheet -- export pdf imported-vocabulary --all
+```
+
+默认 `--mode annotated` 使用汉字与正上方拼音的页面坐标配对，按来源页、行、横坐标恢复顺序，合并 PDF 拆开的拼音字体片段，并过滤田字格伪字符。默认仅导入成功配对的汉字，可跳过封面、标题和只含拼音的空白练习页。`--mode text` 提取所有汉字，包含标题及页眉，需自行核对。
+
+自动识别“第 X 单元”、带课号的课文标题及“语文园地 X”，将每字保存为可选的 `unit` / `chapter` 字段。跨页未出现新标题时沿用上一章节；即使指定来源页码，也读取前页标题来恢复上下文。不使用教材目录或模型推测缺失章节，未识别的分组显示为“未分组/未识别章节”。
+
+章节变化时另起一页；预览与 PDF 的页眉显示同一分组，左侧按单元/章节组织页码，并支持章节定位下拉框。手工 JSON 项目也可通过 item 上的 `unit`、`chapter` 字段分组，这些字段参与页面哈希。
+
+不自动推测多音字；未成功配对的拼音会计入报告。算法针对“拼音在汉字上方”的布局；左右注音、复杂多栏、不等宽合字等版式可能需要手动修正。默认保留来源中的重复字与词语顺序；可用 `--dedupe` 在同一单元/章节内按汉字及拼音去重，不跨章节删除练习。当前仍是**每字一行**的描红，不是每词一行。布局沿用 15 mm 田字格、1 格范字 + 4 格浅灰描红 + 4 格空白、每页最多 8 行。
+
+导入会新建项目，不覆盖同名项目。`import.json` 保留原文件名、SHA-256、来源页数、各页提取统计、按单元/章节统计的分组清单及目标页码，以及每个字的原始页码和坐标；不复制原始 PDF，不记录源文件绝对路径。所有页面均为 draft，仍须人工核对。可编辑项目 project.json，再用既有 update/validate/render 命令及 Review UI 继续处理。
+
+导入项目自动写入独立 `.gitignore`（内容为 `*`），默认不会进入 Git 提交或上传，适用于用户的私人资料。需要对外分享时请自行确认材料及分发范围。
+
+本次真实文件验收：输入 39 页，识别 11 张汉字答案页，提取 741 个带拼音条目，识别为 8 个单元、33 个章节（含语文园地），按章节另起页后生成 106 页描红模型；其余封面和练习页跳过。配置/字体校验通过，本地项目为 `projects/imported-er-shang-grouped/`，提取报告为 `import.json`，可打印 HTML 为 `exports/tracing.html`。这些个人材料没有纳入仓库。实际 PDF 导出因当前环境无法启动 Chromium 而未完成。
+
 ## 笔顺练习
 
 配置 `template: "chinese-stroke-order"` 即可使用新模板，其他纸张、拼音、范字、描红、空白格配置沿用。完整示例见 [examples/stroke-order.json](examples/stroke-order.json)。
@@ -129,6 +163,7 @@ npm run --silent worksheet -- export pdf demo-stroke-order --all
 ## 测试与当前验收记录（2026-11-05）
 
 ```bash
+# 完整测试需先安装 Poppler（PDF 导入测试会实际调用 pdftotext）
 npm run build
 npm test
 npm run test:e2e
@@ -136,7 +171,7 @@ npm run test:e2e
 npm run check
 ```
 
-已实际运行 `npm run build`、`npm test`（13 项通过，含真实 CLI 集成测试和 5 项笔顺测试）、CLI 创建/更新/列出/渲染/校验，以及启动开发服务。笔顺示例已实际执行 create、validate、render，自然生成 2 页模型。依赖升级至 Vitest 4.1.12+ 后，npm 安装审计报告 0 个已知漏洞。
+已实际运行 `npm run build`、`npm test`（21 项通过，含真实 CLI、笔顺、PDF 导入、单元/章节识别和分组分页测试）、CLI 创建/更新/列出/渲染/校验，以及启动开发服务。笔顺示例已实际执行 create、validate、render，自然生成 2 页模型。依赖升级至 Vitest 4.1.12+ 后，npm 安装审计报告 0 个已知漏洞。
 
 **当前环境阻塞：** 已实际尝试 Playwright E2E 和草稿 PDF 导出。受执行沙箱限制，隔离测试服务监听 `127.0.0.1:5174` 返回 EPERM，Chrome 子进程启动后退出；审批策略拒绝权限提升。因此 E2E 未通过，尚未生成可交付 PDF，也未完成 PDF 页数、物理尺寸或视觉验收。不能把 20 页渲染模型视为已经验证的 20 页 PDF。
 
@@ -165,11 +200,12 @@ src/cli/     JSON/YAML CLI
 src/server/  本地 REST、Vite/静态文件
 src/web/     Vue 审核工作台
 src/pdf/     Playwright 打印
+src/import/  本地 PDF 文字/坐标提取与导入报告
 examples/    配置与 JSON Schema
 projects/    本地项目、审核、exports（PDF 已忽略提交）
 tests/       Vitest + 隔离 Playwright E2E
 ```
 
-本阶段没有登录、云端、内嵌 LLM、自动拼音、笔顺动画或其他学科模板，没有可视化内容编辑器，修改内容使用 CLI/配置文件。UI 优先桌面三栏，最小布局宽度 1000 px。文件存储适合单机轻量工作，不提供跨机器并发及不可篡改保证。未来可在稳定 CLI 和 schema 之上增加模板与工具；不需要引入 Agent 编排框架。
+本阶段没有登录、云端、内嵌 LLM、自动拼音、扫描件 OCR、笔顺动画或其他学科模板，没有可视化内容编辑器，修改内容使用 CLI/配置文件。UI 优先桌面三栏，最小布局宽度 1000 px。文件存储适合单机轻量工作，不提供跨机器并发及不可篡改保证。未来可在稳定 CLI 和 schema 之上增加模板与工具；不需要引入 Agent 编排框架。
 
 仓库最初没有 LICENSE，尚未选择项目自身的发布许可证；对外分发前应由项目所有者确定。依赖使用各自许可证，正文中文字体保持系统/外部引用；笔顺 SVG 数据使用独立的 Arphic Public License，详见第三方声明。

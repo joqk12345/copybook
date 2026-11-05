@@ -3,10 +3,12 @@ import { parseArgs } from 'node:util';
 import { parse } from 'yaml';
 import { Store, type Status } from '../core/store.js';
 import { validate } from '../core/validate.js';
+import { importPDF } from '../import/pdf.js';
 import { exportPDF } from '../pdf/export.js';
 const store=new Store();
 async function main() {
-  const {positionals:a,values:v}=parseArgs({allowPositionals:true,options:{from:{type:'string'},page:{type:'string'},status:{type:'string'},comment:{type:'string'},out:{type:'string'},all:{type:'boolean'},'approved-only':{type:'boolean'}}});
+  const {positionals:a,values:v}=parseArgs({allowPositionals:true,options:{from:{type:'string'},id:{type:'string'},title:{type:'string'},mode:{type:'string'},pages:{type:'string'},dedupe:{type:'boolean'},page:{type:'string'},status:{type:'string'},comment:{type:'string'},out:{type:'string'},all:{type:'boolean'},'approved-only':{type:'boolean'}}});
+  if(a[0]==='import'&&a[1]==='pdf') {if(!v.from||!v.id)throw new Error('需要 --from PDF路径 --id 项目ID');return importPDF(store,v.from,{id:v.id,title:v.title,mode:v.mode as 'annotated'|'text'|undefined,pages:v.pages,dedupe:v.dedupe});}
   if(a[0]==='project') {
     if(a[1]==='list')return store.list();
     if(a[1]==='show')return store.snapshot(a[2]);
@@ -29,6 +31,6 @@ async function main() {
     }
   }
   if(a[0]==='export'&&a[1]==='pdf') {if(v.all&&v['approved-only'])throw new Error('--all 与 --approved-only 不能同时使用');return exportPDF(store,a[2],v.all,v.out);}
-  throw new Error('用法：project create/update/list/show | render ID | validate ID | review list/set ID | export pdf ID');
+  throw new Error('用法：import pdf --from FILE --id ID | project create/update/list/show | render ID | validate ID | review list/set ID | export pdf ID');
 }
 try { console.log(JSON.stringify({ok:true,data:await main()})); } catch(e) { console.log(JSON.stringify({ok:false,error:e instanceof Error?e.message:String(e)}));process.exitCode=1; }

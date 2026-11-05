@@ -25,10 +25,11 @@ export function resolveFont(p: Project):ResolvedFont {
 export function fontIssues(p: Project): Issue[] {
   try {
     const {font} = resolveFont(p);
-    const missing = [...new Set([...p.title,...('汉字练习姓名日期静心观察认真书写'+(p.template==='chinese-stroke-order'?'笔顺示范红色为当前笔描与空白练习图形':'')),...p.items.map(i=>i.character).join('')])].filter(c=>!/^\s$/.test(c)&&!font.hasGlyphForCodePoint(c.codePointAt(0)!));
+    const missing = [...new Set([...p.title,...('汉字练习姓名日期静心观察认真书写'+(p.template==='chinese-stroke-order'?'笔顺示范红色为当前笔描与空白练习图形':'')),...p.items.map(i=>i.character+(i.unit??'')+(i.chapter??'')).join('')])].filter(c=>!/^\s$/.test(c)&&!font.hasGlyphForCodePoint(c.codePointAt(0)!));
     const issues:Issue[]=missing.length ? [{severity:'error',code:'MISSING_GLYPH',message:`字体缺少字符：${missing.join('')}`}]:[];
     const titleWidth=font.layout(p.title).positions.reduce((sum,pos)=>sum+pos.xAdvance,0)/font.unitsPerEm*5.5;
     if(titleWidth>210-2*p.paper.marginMm)issues.push({severity:'error',code:'TITLE_OVERFLOW',message:'标题超过页面可用宽度，请缩短标题。'});
+    for(const group of new Set(p.items.map(i=>[i.unit,i.chapter].filter(Boolean).join(' · ')))) {if(group&&font.layout(group).positions.reduce((sum,pos)=>sum+pos.xAdvance,0)/font.unitsPerEm*3>210-2*p.paper.marginMm){issues.push({severity:'error',code:'GROUP_HEADING_OVERFLOW',message:'单元/章节标题超过页面可用宽度，请缩短标题。'});break;}}
     return issues;
   } catch(e) { return [{severity:'error',code:'FONT_UNAVAILABLE',message:(e as Error).message}]; }
 }

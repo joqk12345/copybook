@@ -11,7 +11,7 @@ export const projectSchema = z.object({
     sampleCells: z.number().int().min(1).max(20).default(1), traceCells: z.number().int().min(0).max(20).default(4), blankCells: z.number().int().min(0).max(20).default(4),
     showPinyin: z.boolean().default(true), fontFamily: z.string().max(100).default('Hiragino Sans GB'), fontPath: z.string().optional(), rowsPerPage: z.number().int().min(1).max(30).optional()
   }).default({grid:'tianzige',gridSizeMm:15,sampleCells:1,traceCells:4,blankCells:4,showPinyin:true,fontFamily:'Hiragino Sans GB'}),
-  items: z.array(z.object({ character: z.string().regex(/^\p{Script=Han}$/u, '需要单个汉字'), pinyin: z.string().max(24).regex(/^[\p{L}\p{M}\süÜ:0-9'-]*$/u).default('') })).min(1).max(10000),
+  items: z.array(z.object({ character: z.string().regex(/^\p{Script=Han}$/u, '需要单个汉字'), pinyin: z.string().max(24).regex(/^[\p{L}\p{M}\süÜ:0-9'-]*$/u).default(''), unit:z.string().trim().min(1).max(60).optional(), chapter:z.string().trim().min(1).max(60).optional() })).min(1).max(10000),
   pageCount: z.number().int().min(1).max(200).optional(), repeatToPageCount: z.boolean().default(false)
 }).strict();
 export type Project = z.infer<typeof projectSchema>;
@@ -43,6 +43,7 @@ function groupedItems(p:Project,repeatPages?:number):Item[][] {
     const items:Item[]=[];let used=0;
     while(items.length<limit&&(repeatPages!==undefined||cursor<p.items.length)) {
       const item=p.items[cursor%p.items.length],height=itemHeight(p,item);
+      if(items.length&&(items[0].unit!==item.unit||items[0].chapter!==item.chapter))break;
       if(used+height>usableHeight+0.000001)break;
       items.push(item);used+=height;cursor++;
     }

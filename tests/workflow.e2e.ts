@@ -69,3 +69,21 @@ test('笔顺练习：真实 SVG 步骤、预览和两页 A4 PDF',async({page})=>
   for(const sheet of pdf.getPages()){expect(sheet.getWidth()).toBeCloseTo(210/25.4*72,0);expect(sheet.getHeight()).toBeCloseTo(297/25.4*72,0);}
   await page.screenshot({path:'test-results/stroke-order.png',fullPage:true});
 });
+
+test('从本地 PDF 上传生成待审核描红项目',async({page})=>{
+  const {annotatedPDF}=await import('./pdf-fixture');
+  await page.goto('/');
+  await page.getByRole('button',{name:'导入 PDF',exact:true}).click();
+  await page.getByLabel('PDF 文件（最大 50 MB）').setInputFiles({name:'fixture.pdf',mimeType:'application/pdf',buffer:await annotatedPDF()});
+  await page.getByLabel('新项目 ID').fill('e2e-pdf-upload');
+  await page.getByLabel('字帖标题').fill('导入测试描红');
+  await page.getByRole('button',{name:'导入并生成描红'}).click();
+  await expect(page.getByRole('heading',{name:'导入测试描红'})).toBeVisible();
+  await expect(page.locator('.badge')).toHaveText('待审核');
+  const frame=page.frameLocator('iframe');
+  await expect(frame.locator('.pinyin').first()).toHaveText('ma');
+  await expect(frame.locator('.glyph').first()).toHaveText('妈');
+  expect(await fs.readFile(path.join(root,'e2e-pdf-upload','.gitignore'),'utf8')).toBe('*\n');
+  const report=JSON.parse(await fs.readFile(path.join(root,'e2e-pdf-upload','import.json'),'utf8'));
+  expect(report.source.filename).toBe('fixture.pdf');expect(report.itemCount).toBe(2);
+});

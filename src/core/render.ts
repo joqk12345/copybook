@@ -10,6 +10,7 @@ html,body { margin: 0; padding: 0; background: #fff; }
 .sheet-header {height:24mm; border-bottom:.3mm solid #aab5b5; margin-bottom:6mm;}
 .sheet-header .kicker { font-size:2.5mm; letter-spacing:.65mm; color:#637b7b; margin-bottom:2mm; }
 .sheet-header h1 {font-family:WorksheetFont,sans-serif; font-size:5.5mm; font-weight:400; line-height:7mm; margin:0; white-space:nowrap;}
+.group-heading {font-size:3mm;line-height:4mm;margin-top:1mm;white-space:nowrap;}
 .sheet-header .meta {font-size:2.6mm; margin-top:2mm; color:#708080;}
 .practice-row { display:flex; flex-direction:column; align-items:flex-start; }
 .pinyin {height:7mm; line-height:7mm; text-align:center; font: 4mm/7mm Arial,sans-serif; color:#3e5559;}
@@ -46,7 +47,7 @@ function renderItem(p:Project,item:Item) {
 }
 export function renderSheet(p:Project,s:Sheet) {
   return `<article class="sheet" data-page="${s.number}" data-hash="${s.hash}" style="padding:${p.paper.marginMm}mm">
-    <header class="sheet-header"><div class="kicker">WORKSHEET STUDIO / ${p.template==='chinese-stroke-order'?'笔顺练习':'汉字练习'}</div><h1>${esc(p.title)}</h1><div class="meta">姓名：________________　日期：________________</div></header>
+    <header class="sheet-header"><div class="kicker">WORKSHEET STUDIO / ${p.template==='chinese-stroke-order'?'笔顺练习':'汉字练习'}</div><h1>${esc(p.title)}</h1>${s.items[0].unit||s.items[0].chapter?`<div class="group-heading">${esc([s.items[0].unit,s.items[0].chapter].filter(Boolean).join(' · '))}</div>`:''}<div class="meta">姓名：________________　日期：________________</div></header>
     <main>${s.items.map(item=>renderItem(p,item)).join('')}</main>
     <footer class="sheet-footer"><span>${p.template==='chinese-stroke-order'?'笔顺图形：Hanzi Writer Data · Arphic Public License':'静心观察 · 认真书写'}</span><span>练习 ${String(s.number).padStart(2,'0')}</span></footer></article>`;
 }
