@@ -23,8 +23,15 @@ export async function exportPDF(store:Store,id:string,all=false,out?:string) {
   try {
     const page=await browser.newPage();
     await page.route('**/*',route=>route.abort());
-    await page.setContent(renderDocument(project,selected,font.dataUrl));
-    await page.evaluate(async()=>{await document.fonts.ready;if(!document.fonts.check('16px WorksheetFont'))throw new Error('中文字体加载失败');});
+    await page.setContent(renderDocument(project,selected,font.dataUrl,font.localNames));
+    try {
+      await page.evaluate(async()=>{
+        const sample=Array.from(document.querySelectorAll('.glyph,h1')).map(el=>el.textContent??'').join('')||'汉字';
+        const faces=await document.fonts.load('16px "WorksheetFont"',sample);
+        await document.fonts.ready;
+        if(!faces.length||faces.some(face=>face.status!=='loaded')||!document.fonts.check('16px "WorksheetFont"',sample))throw new Error('字帖字体未成功加载');
+      });
+    }catch(e){throw new Error(`中文字体加载失败：${project.layout.fontFamily}（本地字体名称：${font.localNames.join(' / ')}）。请确认字体已安装，或配置 layout.fontPath 指向本地 .ttf/.otf 文件。原因：${(e as Error).message}`);}
     const problems=await page.evaluate(()=>Array.from(document.querySelectorAll<HTMLElement>('.sheet')).flatMap(sheet=>{
       const b=sheet.getBoundingClientRect();
       const main=sheet.querySelector('main')!.getBoundingClientRect();

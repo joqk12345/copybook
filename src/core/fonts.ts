@@ -6,21 +6,23 @@ const candidates = [
   ['/System/Library/Fonts/Hiragino Sans GB.ttc','Hiragino Sans GB'],
   ['/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc','Noto Sans CJK SC']
 ];
-type ResolvedFont={font:fontkit.Font;fingerprint:string;dataUrl:string|undefined;path:string};
+type ResolvedFont={font:fontkit.Font;fingerprint:string;dataUrl:string|undefined;path:string;localNames:string[]};
 const cache=new Map<string,{stamp:string;value:ResolvedFont}>();
 export function resolveFont(p: Project):ResolvedFont {
   const candidate = candidates.find(([path,family])=>family===p.layout.fontFamily && existsSync(path));
   const path = p.layout.fontPath ?? candidate?.[0];
   if (!path || !existsSync(path)) throw new Error(`找不到字体 ${p.layout.fontFamily}。请配置 layout.fontPath 指向本地已授权的 .ttf/.otf 文件。`);
   if (p.layout.fontPath && !/\.(ttf|otf)$/i.test(path)) throw new Error('外部字体仅支持 .ttf/.otf；系统 TTC 使用已知字体名。');
-  const stat=statSync(path),stamp=`${stat.mtimeMs}:${stat.size}:${Boolean(p.layout.fontPath)}`;
+  const stat=statSync(path),stamp=`${stat.mtimeMs}:${stat.size}:${Boolean(p.layout.fontPath)}:${p.layout.fontFamily}`;
   const cached=cache.get(path);if(cached?.stamp===stamp)return cached.value;
   const bytes = readFileSync(path);
   const parsed = fontkit.create(bytes);
-  const font = 'fonts' in parsed ? parsed.fonts[0] : parsed;
+  const normalize=(name:string)=>name.replace(/[\s_-]/g,'').toLowerCase();
+  const font = 'fonts' in parsed ? parsed.fonts.find(face=>[face.familyName,face.fullName,face.postscriptName].some(name=>normalize(name??'').startsWith(normalize(p.layout.fontFamily))))??parsed.fonts[0] : parsed;
+  const localNames=[...new Set([font.postscriptName,font.fullName,font.familyName,p.layout.fontFamily].filter((name):name is string=>Boolean(name)))];
   const fingerprint = createHash('sha256').update(bytes).digest('hex');
   const dataUrl = p.layout.fontPath ? `data:font/${path.endsWith('.otf')?'otf':'ttf'};base64,${bytes.toString('base64')}` : undefined;
-  const value={font,fingerprint,dataUrl,path};cache.set(path,{stamp,value});return value;
+  const value={font,fingerprint,dataUrl,path,localNames};cache.set(path,{stamp,value});return value;
 }
 export function fontIssues(p: Project): Issue[] {
   try {

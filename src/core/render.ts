@@ -51,8 +51,9 @@ export function renderSheet(p:Project,s:Sheet) {
     <main>${s.items.map(item=>renderItem(p,item)).join('')}</main>
     <footer class="sheet-footer"><span>${p.template==='chinese-stroke-order'?'笔顺图形：Hanzi Writer Data · Arphic Public License':'静心观察 · 认真书写'}</span><span>练习 ${String(s.number).padStart(2,'0')}</span></footer></article>`;
 }
-export function renderDocument(p:Project,pages:Sheet[],fontDataUrl?:string) {
-  const family=p.layout.fontFamily.replace(/["\\<>\n\r]/g,'');
-  const source=fontDataUrl?`url("${fontDataUrl}")`:`local("${family}")`;
+export function renderDocument(p:Project,pages:Sheet[],fontDataUrl?:string,localFontNames:readonly string[] = []) {
+  const cssString=(name:string)=>JSON.stringify(name).replace(/</g,'\\3c ').replace(/>/g,'\\3e ');
+  const names=[...new Set([...localFontNames,p.layout.fontFamily])];
+  const source=fontDataUrl?`url(${cssString(fontDataUrl)})`:names.map(name=>`local(${cssString(name)})`).join(',');
   return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(p.title)}</title><style>@font-face{font-family:WorksheetFont;src:${source};font-weight:400;font-display:block;}${sheetCSS}</style></head><body>${pages.map(s=>renderSheet(p,s)).join('')}</body></html>`;
 }

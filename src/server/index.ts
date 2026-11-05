@@ -31,13 +31,13 @@ app.get('/api/projects',async(_req,res)=>{res.json({ok:true,data:await store.lis
 app.get('/api/projects/:id',async(req,res)=>{const s=await store.snapshot(req.params.id);res.json({ok:true,data:{...s,issues:validate(s.project)}});});
 app.get('/api/projects/:id/preview',async(req,res)=>{
   const s=await store.snapshot(req.params.id),n=Number(req.query.page??1),sheet=s.pages[n-1];if(!sheet)throw new Error('页码不存在');
-  const font=resolveFont(s.project);res.type('html').send(renderDocument(s.project,[sheet],font.dataUrl));
+  const font=resolveFont(s.project);res.type('html').send(renderDocument(s.project,[sheet],font.dataUrl,font.localNames));
 });
 app.get('/api/projects/:id/print',async(req,res)=>{
   const s=await store.snapshot(req.params.id),all=req.query.all==='1';
   const pages=s.pages.filter((_,i)=>all||s.reviews[i].status==='approved');if(!pages.length)throw new Error('没有已批准页面');
   const issues=validate(s.project);if(issues.some(i=>i.severity==='error'))throw new Error(JSON.stringify(issues));
-  res.type('html').send(renderDocument(s.project,pages,resolveFont(s.project).dataUrl));
+  const font=resolveFont(s.project);res.type('html').send(renderDocument(s.project,pages,font.dataUrl,font.localNames));
 });
 app.post('/api/projects/:id/review',async(req,res)=>{
   const {page,status,comment,hash,version}=req.body;

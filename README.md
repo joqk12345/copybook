@@ -142,6 +142,18 @@ npm run --silent worksheet -- export pdf demo-stroke-order --all
 
 放入 `layout` 中，外部字体仅支持 `.ttf` / `.otf`，按需内嵌到同一份页面 HTML，供浏览器和 PDF 共用。请自行确认字体使用及嵌入许可，不要提交未授权字体。系统 TTC 仅支持代码中列出的已知路径/字体名。拼音使用本机 Arial/sans-serif，导出会检查是否发生文本溢出。fontkit 检查中文字符覆盖，字体文件内容摘要参与页面哈希。
 
+### PDF 导出提示“中文字体加载失败”
+
+系统字体配置中的 `fontFamily` 可能只是字体族名，而 CSS `@font-face` 的 `local()` 需要具体字面的完整名称或 PostScript 名称（见 [MDN 字体来源说明](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40font-face/src)）。例如本机 `Hiragino Sans GB` 字体文件中实际名称是 `HiraginoSansGB-W3` / `Hiragino Sans GB W3`。
+
+应用会从实际字体文件读取这些名称，预览与 PDF 共用按 PostScript 名、完整名称、字面族名、配置名依次匹配的来源列表。TTC 字体集合优先选择与配置名匹配的字面，避免将 Noto Sans CJK SC 配置误配为集合中的其他地区字面。显式 `fontPath` 仍优先以内嵌文件加载，不依赖字体名称匹配。
+
+打印前会显式执行 `document.fonts.load()`，等待加载完成后检查字体状态；失败时显示配置字体、实际字面名称以及本地字体文件配置建议。`validate` 通过表示文件及字形覆盖通过，浏览器加载仍在导出阶段单独检查。
+
+更新代码后请重启本地服务，再刷新工作台重新导出。如仍失败，确认所需字体存在，或将 `layout.fontPath` 指向本地已授权的 `.ttf` / `.otf` 文件；不通过取消字体校验来掩盖缺字或字体替换。
+
+本次已通过真实系统字体名称与模板回归测试；工具环境的 Chromium 仍在启动阶段受沙箱限制，尚未验证修复后的实际 PDF 成品。
+
 ## Review 与持久化
 
 左侧项目和页码，中间 iframe 实时 A4 页面，右侧反馈和逐页批准/退回。顶部显示批准统计、已批准页打印预览和 PDF 导出。缩放支持 50/70/85/100%，项目、页码与缩放保存在浏览器 localStorage。
@@ -171,7 +183,7 @@ npm run test:e2e
 npm run check
 ```
 
-已实际运行 `npm run build`、`npm test`（21 项通过，含真实 CLI、笔顺、PDF 导入、单元/章节识别和分组分页测试）、CLI 创建/更新/列出/渲染/校验，以及启动开发服务。笔顺示例已实际执行 create、validate、render，自然生成 2 页模型。依赖升级至 Vitest 4.1.12+ 后，npm 安装审计报告 0 个已知漏洞。
+已实际运行 `npm run build`、`npm test`（24 项通过，含真实 CLI、笔顺、PDF 导入、分组分页及字体加载名称回归测试）、CLI 创建/更新/列出/渲染/校验，以及启动开发服务。笔顺示例已实际执行 create、validate、render，自然生成 2 页模型。依赖升级至 Vitest 4.1.12+ 后，npm 安装审计报告 0 个已知漏洞。
 
 **当前环境阻塞：** 已实际尝试 Playwright E2E 和草稿 PDF 导出。受执行沙箱限制，隔离测试服务监听 `127.0.0.1:5174` 返回 EPERM，Chrome 子进程启动后退出；审批策略拒绝权限提升。因此 E2E 未通过，尚未生成可交付 PDF，也未完成 PDF 页数、物理尺寸或视觉验收。不能把 20 页渲染模型视为已经验证的 20 页 PDF。
 

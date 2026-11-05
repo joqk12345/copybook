@@ -18,6 +18,7 @@ test('隔离项目：CLI → 自动预览 → 人工动作模拟 → 失效 → 
   await page.goto(`/?project=${input.id}`);
   await expect(page.getByRole('heading',{name:input.title})).toBeVisible();
   const frame=page.frameLocator('iframe');await expect(frame.locator('.cell')).toHaveCount(72);
+  const loadedFont=await frame.locator('body').evaluate(async()=>{const faces=await document.fonts.load('16px WorksheetFont','春夏秋冬');return faces.length>0&&faces.every(f=>f.status==='loaded')&&document.fonts.check('16px WorksheetFont','春夏秋冬');});expect(loadedFont).toBe(true);
   const dims=await frame.locator('.cell').first().boundingBox();expect(dims!.width/.7).toBeCloseTo(15*96/25.4,0);
   const sheetBox=await frame.locator('.sheet').boundingBox();expect(sheetBox!.width/sheetBox!.height).toBeCloseTo(210/297,3);
   await page.getByLabel('审核反馈').fill('隔离 E2E 审核反馈');
