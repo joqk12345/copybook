@@ -5,3 +5,4 @@ playwright-report/
 .tmp/
 *.tmp
 projects/*/exports/
+projects/grade2-upper-stroke-order/

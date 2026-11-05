@@ -84,6 +84,21 @@ npm run --silent worksheet -- export pdf imported-vocabulary --all
 
 本次真实文件验收：输入 39 页，识别 11 张汉字答案页，提取 741 个带拼音条目，识别为 8 个单元、33 个章节（含语文园地），按章节另起页后生成 106 页描红模型；其余封面和练习页跳过。配置/字体校验通过，本地项目为 `projects/imported-er-shang-grouped/`，提取报告为 `import.json`，可打印 HTML 为 `exports/tracing.html`。这些个人材料没有纳入仓库。实际 PDF 导出因当前环境无法启动 Chromium 而未完成。
 
+### 二年级上册笔顺练习
+
+基于同一份已分组教材提取结果，另建本地笔顺项目 `projects/grade2-upper-stroke-order/`：保留原有 741 条字音练习及 8 个单元、33 个课文/园地分组，覆盖全部 417 个不同汉字。A4 纵向、15 mm 田字格、每字最多 4 个练习块/页，按章节分页后为 198 页。可在左侧项目列表选择“二年级上册汉字笔顺练习”，或直接访问 [本地预览](http://localhost:5173/?project=grade2-upper-stroke-order)；全册打印预览 HTML 保存在项目 `exports/stroke-order.html`。
+
+生成方式（需先完成上面的 PDF 导入，并保持导入项目位于本地 `projects/`）：
+
+```bash
+node --input-type=module -e 'import fs from "node:fs";const source=JSON.parse(fs.readFileSync("projects/imported-er-shang-grouped/project.json","utf8"));const project={...source,id:"grade2-upper-stroke-order",title:"二年级上册汉字笔顺练习",template:"chinese-stroke-order",pageCount:undefined,repeatToPageCount:false,layout:{...source.layout,gridSizeMm:15,sampleCells:1,traceCells:4,blankCells:4,showPinyin:true,rowsPerPage:4}};fs.writeFileSync("/private/tmp/grade2-upper-stroke-order.json",JSON.stringify(project,null,2));'
+npm run --silent worksheet -- project create --from /private/tmp/grade2-upper-stroke-order.json
+npm run --silent worksheet -- validate grade2-upper-stroke-order
+npm run --silent worksheet -- render grade2-upper-stroke-order
+```
+
+所有 417 个汉字均有已安装本地笔顺路径；拼音和章节沿用 PDF 提取结果，使用前仍应人工核对课本字音与笔顺。项目及练习内容属于本地教材数据，不纳入 Git。预览和人工审核与其他项目一致，PDF 导出前仍需逐页审核。
+
 ## 笔顺练习
 
 配置 `template: "chinese-stroke-order"` 即可使用新模板，其他纸张、拼音、范字、描红、空白格配置沿用。完整示例见 [examples/stroke-order.json](examples/stroke-order.json)。
