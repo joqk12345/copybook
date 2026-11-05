@@ -73,6 +73,25 @@ function hanCharacters(words:Word[]):Word[] {
   }
   return lines.flatMap(line=>line.sort((a,b)=>a.xMin-b.xMin)).filter((w,i,list)=>!list.slice(Math.max(0,i-3),i).some(prev=>prev.text===w.text&&Math.abs(prev.xMin-w.xMin)<.5&&Math.abs(prev.yMin-w.yMin)<.5));
 }
+function inferWords(chars:Word[]):Map<string,{text:string;id:string}> {
+  const lines:Word[][]=[];
+  for(const char of [...chars].sort((a,b)=>a.yMin-b.yMin||a.xMin-b.xMin)) {
+    const line=lines.find(l=>Math.abs(l[0].yMin-char.yMin)<=2);
+    if(line)line.push(char);else lines.push([char]);
+  }
+  const result=new Map<string,{text:string;id:string}>();let idCounter=0;
+  for(const line of lines) {
+    const ordered=line.sort((a,b)=>a.xMin-b.xMin);let group:Word[]=[];
+    const flush=()=>{if(group.length>1){const text=group.map(c=>c.text).join(''),id=`w${idCounter++}`;for(const c of group)result.set(`${c.xMin}:${c.yMin}`,{text,id});}group=[];};
+    for(const char of ordered) {
+      const previous=group.at(-1),gap=previous?char.xMin-previous.xMax:0;
+      if(previous&&gap>Math.max(14,(previous.xMax-previous.xMin)*.55))flush();
+      group.push(char);
+    }
+    flush();
+  }
+  return result;
+}
 type Heading={y:number;unit?:string;chapter?:string;resetChapter?:boolean};
 function pageHeadings(words:Word[]):Heading[] {
   const rows:Word[][]=[];
@@ -99,7 +118,7 @@ export function extractItems(pages:PDFPage[],options:Pick<ImportOptions,'mode'|'
   const items:ExtractedItem[]=[],stats:{page:number;hanCount:number;matched:number;unmatchedPinyin:number;imported:number}[]=[];
   const seen=new Set<string>();let unit:string|undefined,chapter:string|undefined;
   for(const page of pages) {
-    const chars=hanCharacters(page.words),tokens=pinyinTokens(page.words),used=new Set<Word>(),headings=pageHeadings(page.words);let matched=0,imported=0,headingIndex=0;
+    const chars=hanCharacters(page.words),wordMap=inferWords(chars),tokens=pinyinTokens(page.words),used=new Set<Word>(),headings=pageHeadings(page.words);let matched=0,imported=0,headingIndex=0;
     for(const char of chars) {
       while(headingIndex<headings.length&&headings[headingIndex].y<=char.yMin+2){const heading=headings[headingIndex++];if(heading.unit)unit=heading.unit;if(heading.resetChapter)chapter=undefined;if(heading.chapter)chapter=heading.chapter;}
       const cx=(char.xMin+char.xMax)/2,width=char.xMax-char.xMin;
@@ -110,7 +129,7 @@ export function extractItems(pages:PDFPage[],options:Pick<ImportOptions,'mode'|'
       if(!selected.has(page.number)||(mode==='annotated'&&!token))continue;
       const pinyin=token?.text??'',key=JSON.stringify([unit,chapter,char.text,pinyin]);
       if(options.dedupe&&seen.has(key))continue;
-      seen.add(key);items.push({character:char.text,pinyin,...(unit?{unit}:{}),...(chapter?{chapter}:{}),sourcePage:page.number,x:char.xMin,y:char.yMin});imported++;
+      seen.add(key);const word=wordMap.get(`${char.xMin}:${char.yMin}`);items.push({character:char.text,pinyin,...(word?{word:word.text,wordId:`${page.number}:${word.id}`}:{ } ),...(unit?{unit}:{}),...(chapter?{chapter}:{}),sourcePage:page.number,x:char.xMin,y:char.yMin});imported++;
     }
     while(headingIndex<headings.length){const heading=headings[headingIndex++];if(heading.unit)unit=heading.unit;if(heading.resetChapter)chapter=undefined;if(heading.chapter)chapter=heading.chapter;}
     if(selected.has(page.number))stats.push({page:page.number,hanCount:chars.length,matched,unmatchedPinyin:tokens.length-used.size,imported});
@@ -128,7 +147,7 @@ export async function importPDF(store:Store,file:string,options:ImportOptions) {
   try {({stdout:xml}=await exec('pdftotext',['-bbox-layout','-enc','UTF-8',path.resolve(file),'-'],{timeout:60000,maxBuffer:32*1024*1024}));}
   catch(e) {if((e as NodeJS.ErrnoException).code==='ENOENT')throw new Error('缺少 pdftotext：macOS 执行 brew install poppler；Linux 安装 poppler-utils。');throw new Error(`PDF 文字提取失败：${(e as Error).message.slice(0,500)}`);}
   const pages=parseBBox(xml),{items,stats}=extractItems(pages,options);
-  const project=projectSchema.parse({id:options.id,title:options.title??'PDF 导入汉字描红',items:items.map(({character,pinyin,unit,chapter})=>({character,pinyin,...(unit?{unit}:{}),...(chapter?{chapter}:{})})),layout:{showPinyin:items.some(i=>i.pinyin),rowsPerPage:8}});
+  const project=projectSchema.parse({id:options.id,title:options.title??'PDF 导入汉字描红',items:items.map(({character,pinyin,word,wordId,unit,chapter})=>({character,pinyin,...(word?{word}:{}),...(wordId?{wordId}:{}),...(unit?{unit}:{}),...(chapter?{chapter}:{})})),layout:{showPinyin:items.some(i=>i.pinyin),rowsPerPage:8}});
   const warnings=[
     '拼音按 PDF 坐标配对，未自动推测读音；请逐页核对，所有页面保持待审核。',
     ...(options.mode==='text'?['纯文字模式会包含标题及页眉中的汉字；未匹配的拼音留空。']:[]),

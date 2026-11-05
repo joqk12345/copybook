@@ -31,6 +31,13 @@ describe('配置与分页',()=>{
     p.items[1].chapter='2 夏日';const after=paginate(p);expect(after[0].hash).toBe(before[0].hash);expect(after[1].hash).not.toBe(before[1].hash);
     p.repeatToPageCount=true;p.pageCount=5;const repeated=paginate(p);expect(repeated).toHaveLength(5);expect(repeated.map(s=>s.items[0].character)).toEqual(['春','夏','秋','春','夏']);
   });
+  it('词语跨页时整体移动到下一页',()=>{
+    const p=projectSchema.parse({...demo,id:'word-boundary',pageCount:undefined,repeatToPageCount:false,layout:{...demo.layout,rowsPerPage:2},items:[
+      {character:'春',pinyin:'chūn',word:'春天',wordId:'w1'},{character:'天',pinyin:'tiān',word:'春天',wordId:'w1'},
+      {character:'夏',pinyin:'xià',word:'夏天',wordId:'w2'},{character:'天',pinyin:'tiān',word:'夏天',wordId:'w2'}
+    ]});
+    const pages=paginate(p);expect(pages).toHaveLength(2);expect(pages.every(s=>s.items.length===2)).toBe(true);expect(pages[0].items.every(i=>i.wordId==='w1')).toBe(true);expect(pages[1].items.every(i=>i.wordId==='w2')).toBe(true);
+  });
   it('缺字体明确报错',()=>{const p=make();p.layout.fontPath='/nonexistent/font.ttf';expect(validate(p).some(i=>i.code==='FONT_UNAVAILABLE')).toBe(true);});
 });
 describe('持久化与审核关口',()=>{

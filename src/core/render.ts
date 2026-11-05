@@ -13,6 +13,8 @@ html,body { margin: 0; padding: 0; background: #fff; }
 .group-heading {font-size:2.3mm;line-height:3mm;margin-top:.4mm;white-space:nowrap;}
 .sheet-header .meta {font-size:2.1mm; margin-top:.6mm; color:#708080;}
 .practice-row { display:flex; flex-direction:column; align-items:flex-start; }
+.practice-row { position:relative; }
+.word-label { position:absolute; left:140mm; top:1mm; font-size:2mm; line-height:3mm; color:#71817f; white-space:nowrap; }
 .pinyin {height:7mm; line-height:7mm; text-align:center; font: 4mm/7mm Arial,sans-serif; color:#3e5559;}
 .cells {display:flex;}
 .cell {position:relative; flex-shrink:0;}
@@ -36,12 +38,12 @@ function practiceCells(p:Project,item:Item) {
 }
 function renderItem(p:Project,item:Item) {
   const l=p.layout,pinyin=l.showPinyin?`<div class="pinyin" style="width:${l.gridSizeMm}mm">${esc(item.pinyin)}</div>`:'';
-  if(p.template==='chinese-tracing')return `<div class="practice-row" style="height:${itemHeight(p,item)}mm">${pinyin}${practiceCells(p,item)}</div>`;
+  if(p.template==='chinese-tracing')return `<div class="practice-row" data-word="${esc(item.word??'')}" style="height:${itemHeight(p,item)}mm">${pinyin}${practiceCells(p,item)}${item.word?`<span class="word-label">${esc(item.word)}</span>`:''}</div>`;
   const strokes=characterStrokes(item.character);
   if(!strokes)throw new Error(`缺少“${item.character}”的本地笔顺数据`);
   const columns=geometry(p).strokeColumns;
   return `<section class="stroke-block" data-character="${esc(item.character)}" style="height:${itemHeight(p,item)}mm">${pinyin}
-    <div class="stroke-instruction">${esc(item.character)} · ${strokes.length} 笔　笔顺示范（红色为当前笔）</div>
+    <div class="stroke-instruction">${item.word?`${esc(item.word)} · `:''}${esc(item.character)} · ${strokes.length} 笔　笔顺示范（红色为当前笔）</div>
     <div class="stroke-steps" style="width:${columns*l.gridSizeMm}mm">${strokes.map((_,step)=>`<div class="stroke-step" data-step="${step+1}" style="width:${l.gridSizeMm}mm"><div class="cell" style="width:${l.gridSizeMm}mm;height:${l.gridSizeMm}mm">${grid()}<svg class="stroke-glyph" viewBox="0 0 100 100" role="img" aria-label="${esc(item.character)} 第 ${step+1} 笔，共 ${strokes.length} 笔"><g transform="translate(10 10) scale(.078125) translate(0 900) scale(1 -1)">${strokes.map((path,index)=>`<path d="${esc(path)}" fill="${index===step?'#b84335':index<step?'#617272':'#e9edec'}" data-stroke="${index+1}" data-state="${index===step?'current':index<step?'completed':'upcoming'}"/>`).join('')}</g></svg></div><div class="stroke-number">${step+1}</div></div>`).join('')}</div>
     <div class="practice-label">描红与空白练习</div>${practiceCells(p,item)}</section>`;
 }

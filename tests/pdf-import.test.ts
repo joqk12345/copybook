@@ -19,6 +19,10 @@ describe('PDF 提取与导入',()=>{
     expect(result.items.map(i=>[i.character,i.pinyin])).toEqual([['妈','mā'],['们','men']]);
     expect(result.stats[0].matched).toBe(2);
   });
+  it('从同一 PDF 字词块保留词语和唯一分组标识',()=>{
+    const result=extractItems([{number:1,words:[word('妈妈',20,100,40)]}],{mode:'text'});
+    expect(result.items.map(i=>i.word)).toEqual(['妈妈','妈妈']);expect(result.items[0].wordId).toBe(result.items[1].wordId);
+  });
   it('保留同字不同读音，按配对去重，不从空白练习页猜字',()=>{
     const pages=[{number:1,words:[word('长',20,100),word('zhǎng',14,82,31,10)]},{number:2,words:[word('长',20,100),word('cháng',14,82,31,10)]},{number:3,words:[word('长',20,100),word('zhǎng',14,82,31,10)]},{number:4,words:[word('zhǎng',14,82,31,10)]}];
     const result=extractItems(pages,{dedupe:true});expect(result.items.map(i=>i.pinyin)).toEqual(['zhǎng','cháng']);expect(result.stats[3].imported).toBe(0);

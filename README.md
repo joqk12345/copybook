@@ -86,7 +86,7 @@ npm run --silent worksheet -- export pdf imported-vocabulary --all
 
 ### 二年级上册笔顺练习
 
-基于同一份已分组教材提取结果，另建本地笔顺项目 `projects/grade2-upper-stroke-order/`：保留原有 741 条字音练习及 8 个单元、33 个课文/园地分组，覆盖全部 417 个不同汉字。A4 纵向、15 mm 田字格、每字最多 4 个练习块/页，按章节分页后为 195 页。可在左侧项目列表选择“二年级上册汉字笔顺练习”，或直接访问 [本地预览](http://localhost:5173/?project=grade2-upper-stroke-order)；全册打印预览 HTML 保存在项目 `exports/stroke-order.html`。
+基于同一份已分组教材提取结果，另建本地笔顺项目 `projects/grade2-upper-stroke-order/`：保留原有 741 条字音练习及 8 个单元、33 个课文/园地分组，覆盖全部 417 个不同汉字。A4 纵向、15 mm 田字格、每字最多 4 个练习块/页，按章节和词语边界分页后为 199 页。可在左侧项目列表选择“二年级上册汉字笔顺练习”，或直接访问 [本地预览](http://localhost:5173/?project=grade2-upper-stroke-order)；全册打印预览 HTML 保存在项目 `exports/stroke-order.html`。
 
 生成方式（需先完成上面的 PDF 导入，并保持导入项目位于本地 `projects/`）：
 
@@ -97,7 +97,7 @@ npm run --silent worksheet -- validate grade2-upper-stroke-order
 npm run --silent worksheet -- render grade2-upper-stroke-order
 ```
 
-所有 417 个汉字均有已安装本地笔顺路径；拼音和章节沿用 PDF 提取结果，使用前仍应人工核对课本字音与笔顺。项目及练习内容属于本地教材数据，不纳入 Git。预览和人工审核与其他项目一致，PDF 导出前仍需逐页审核。
+所有 417 个汉字均有已安装本地笔顺路径；导入会根据原 PDF 字格间距恢复词语（例如“妈妈”“身子”“看见”），并在分页时将完整词语整体移动到下一页，避免词语跨页难以辨认。拼音和章节沿用 PDF 提取结果，使用前仍应人工核对课本字音与笔顺。项目及练习内容属于本地教材数据，不纳入 Git。预览和人工审核与其他项目一致，PDF 导出前仍需逐页审核。
 
 ## 笔顺练习
 

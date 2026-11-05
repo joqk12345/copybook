@@ -138,6 +138,16 @@
             "maxLength": 24,
             "pattern": "^[\\p{L}\\p{M}\\süÜ:0-9'-]*$"
           },
+          "word": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "wordId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
           "unit": {
             "type": "string",
             "minLength": 1,
